@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fingerprint Entropy — Critical Demo v3</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; line-height: 1.6; }
+    h1 { font-size: 26px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+    th { background: #f5f5f5; }
+    .score { margin-top: 20px; font-size: 18px; }
+    .note { margin-top: 10px; font-size: 14px; color: #444; }
+    button { margin-top: 15px; padding: 10px 15px; cursor: pointer; margin-right: 10px; }
+    .hidden { display: none; margin-top: 15px; padding: 15px; border: 1px solid #ddd; background: #fafafa; }
+  </style>
+</head>
+<body>
+
+<h1>Browser Fingerprint & Entropy (Critical Demo v3)</h1>
+<p>This tool estimates entropy — and shows why that estimate can be misleading.</p>
+
+<table id="dataTable">
+  <thead>
+    <tr>
+      <th>Signal</th>
+      <th>Value</th>
+      <th>Estimated Entropy (bits)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<div class="score" id="totalScore"></div>
+<div class="note" id="assumptionNote"></div>
+<div class="score" id="confidence"></div>
+<div class="note" id="philosophy"></div>
+
+<button onclick="toggleExplanation()">Why is this result misleading?</button>
+<button onclick="simulateUser()">Simulate another user</button>
+
+<div id="explanation" class="hidden">
+  <strong>Three core problems:</strong>
+  <ul>
+    <li><strong>False independence:</strong> Signals like User Agent and Platform are correlated.</li>
+    <li><strong>No real distribution:</strong> Entropy depends on real-world probabilities, not assumed counts.</li>
+    <li><strong>Signal ≠ Evidence:</strong> A unique signal does not guarantee trackability.</li>
+  </ul>
+</div>
+
+<script>
+function log2(x) {
+  return Math.log(x) / Math.log(2);
+}
+
+function estimateEntropy(possibleValues) {
+  return log2(possibleValues);
+}
+
+const fakeDataOptions = {
+  "User Agent": ["Chrome", "Firefox", "Safari", "Edge"],
+  "Language": ["en", "ar", "fr", "de"],
+  "Platform": ["Win32", "Linux", "MacIntel"],
+  "Screen Resolution": ["1920x1080", "1366x768", "1280x720"],
+  "Color Depth": [24, 32],
+  "Timezone": ["Asia/Baghdad", "Europe/Berlin", "America/New_York"],
+  "Cookies Enabled": [true, false]
+};
+
+function getRealSignals() {
+  return {
+    "User Agent": navigator.userAgent,
+    "Language": navigator.language,
+    "Platform": navigator.platform,
+    "Screen Resolution": screen.width + "x" + screen.height,
+    "Color Depth": screen.colorDepth,
+    "Timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+    "Cookies Enabled": navigator.cookieEnabled
+  };
+}
+
+function getFakeSignals() {
+  let obj = {};
+  for (let key in fakeDataOptions) {
+    const arr = fakeDataOptions[key];
+    obj[key] = arr[Math.floor(Math.random() * arr.length)];
+  }
+  return obj;
+}
+
+function entropyModel(signal) {
+  switch(signal) {
+    case "User Agent": return estimateEntropy(1000);
+    case "Language": return estimateEntropy(50);
+    case "Platform": return estimateEntropy(20);
+    case "Screen Resolution": return estimateEntropy(100);
+    case "Color Depth": return estimateEntropy(10);
+    case "Timezone": return estimateEntropy(24);
+    case "Cookies Enabled": return estimateEntropy(2);
+    default: return 1;
+  }
+}
+
+function render(signals) {
+  const tbody = document.querySelector("#dataTable tbody");
+  tbody.innerHTML = "";
+
+  let totalEntropy = 0;
+
+  for (let key in signals) {
+    const value = signals[key];
+    const entropy = entropyModel(key);
+    totalEntropy += entropy;
+
+    const row = document.createElement("tr");
+    row.innerHTML = `<td>${key}</td><td>${value}</td><td>${entropy.toFixed(2)}</td>`;
+    tbody.appendChild(row);
+  }
+
+  document.getElementById("totalScore").innerText =
+    "Estimated Entropy: " + totalEntropy.toFixed(2) + " bits";
+
+  document.getElementById("assumptionNote").innerText =
+    "Assumption: All signals are independent — this is false.";
+
+  document.getElementById("confidence").innerText = "Confidence: Low";
+
+  document.getElementById("philosophy").innerText =
+    "Two users can have identical entropy — and be completely different.";
+}
+
+function toggleExplanation() {
+  const el = document.getElementById("explanation");
+  el.classList.toggle("hidden");
+}
+
+function simulateUser() {
+  const fakeSignals = getFakeSignals();
+  render(fakeSignals);
+}
+
+// initial render
+render(getRealSignals());
+</script>
+
+</body>
+</html>
