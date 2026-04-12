@@ -14,4 +14,4 @@ This demo shows that this assumption is not always valid.
 > Two users can have identical entropy — and be completely different.
 
 ## Live Demo
-https://mr-pc-iq.github.io/fingerprint-entropy-demo/
+https://hisham-hyber.github.io/fingerprint-entropy-demo/
